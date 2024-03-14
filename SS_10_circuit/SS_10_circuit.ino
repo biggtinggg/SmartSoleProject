@@ -17,22 +17,23 @@ SPI Connection Tabl
 
 // the StretchSense circuit [16FGV1.0] communicates using SPI
 #include <SPI.h>
-#include <SoftwareSerial.h>
+// #include <SoftwareSerial.h>
+#include <ArduinoBLE.h>
 #include <ArduinoJson.h>
 
 // DE sensors variables
-float live_capacitance[10]    = {0,0,0,0,0,0,0,0,0,0};
-int mapped_capacitance[10]    = {0,0,0,0,0,0,0,0,0,0};
-float highest_capacitance[10] = {0,0,0,0,0,0,0,0,0,0};
-float lowest_capacitance[10]  = {0,0,0,0,0,0,0,0,0,0};
+float live_capacitance[20]    = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+int mapped_capacitance[20]    = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+float highest_capacitance[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+float lowest_capacitance[20]  = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 // Flags
 int calibration = false;
 
 // For the Stretsense
 //const int InterruptPin = 6;
-const int chipSelectPin = 10;
-const int powerPin = 9;
+const int chipSelectPin_1 = 9;
+const int chipSelectPin_2 = 10;
 
 /**************************************************************************/
 // DEFINITIONS
@@ -87,7 +88,7 @@ int   RESOLUTION_MODE = RESOLUTION_1pF;
 SPISettings SPI_settings(2000000, MSBFIRST, SPI_MODE1); 
 // Default scaling factor
 int CapacitanceScalingFactor = 0; //Default value
-int RawData[20];
+int RawData[40];
 
 // For testing if the board is still on
 unsigned long previousMillis = 0;
@@ -97,14 +98,24 @@ unsigned long interval = 2000;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  //Serial.flush();
-  //Stretchsense
+  while (!Serial);
+
+  // Enable Bluetooth communication if board is connected over Bluetooth
+  if (!BLE.begin()) {
+    Serial.println("* Starting Bluetooth® Low Energy module failed!");
+    while (1);
+  }
+  BLE.setLocalName("Nano 33 BLE (Central)"); 
+  BLE.advertise();
+  Serial.println("Arduino Nano 33 BLE (Central Device)");
+  Serial.println(" ");
+
   //Initialise SPI port
   SPI.begin();
   SPI.beginTransaction(SPI_settings);
-  pinMode(chipSelectPin, OUTPUT);
-  pinMode(powerPin, OUTPUT);
-  digitalWrite(powerPin, HIGH);
+  pinMode(chipSelectPin_1, OUTPUT);
+  pinMode(chipSelectPin_2, OUTPUT);
+
   //Configure 16FGV1.0:
   writeConfiguration();
   //Get capacitance scaling factor
@@ -135,6 +146,7 @@ void loop() {
 
   // Print to serial
   sendSerialData();
+  delay(200);
 }
 
 // =====================================================
@@ -143,7 +155,7 @@ void sendSerialData() {
   // Serial.print(millis()); // This will print the timestamp
   // Serial.print(",");
   
-  /*for(int i=0; i<10; i++) {    // i index should be <10 for full serial bus, but since only 8 are used right now it has been changed
+  for(int i=0; i<20; i++) {    // i index should be <10 for full serial bus, but since only 8 are used right now it has been changed
     //Serial.print("ch");
     //Serial.print(i);
     //Serial.print(":");
@@ -152,12 +164,14 @@ void sendSerialData() {
     //Serial.print (highest_capacitance[i]);
     //mapped_capacitance[i] = map(live_capacitance[i], lowest_capacitance[i], highest_capacitance[i], 0, 100);
     Serial.print(calibrationCurve(live_capacitance[i]));
-    if(i < 9) {
+    if(i < 19) {
       Serial.print(",");
     }
   }
-  // Serial.print(">");*/
-  Serial.print(calibrationCurve(live_capacitance[9]));
+  // Serial.print(">");
+  // Serial.print(calibrationCurve(live_capacitance[9]));
+  // Serial.print (",");
+  // Serial.print(calibrationCurve(live_capacitance[0]));
   Serial.println();
 }
 
@@ -185,7 +199,7 @@ float calibrationCurve(float capacitance) {
 void calibrateDESensors() {
   /* Initialize maximum and minimum capacitance for each finger */             
   if (calibration == false){
-    for (int i=0; i<10; i++){   
+    for (int i=0; i<20; i++){   
       lowest_capacitance[i] = live_capacitance[i]-1;  
       highest_capacitance[i] = live_capacitance[i]+1; 
       calibration = true;
@@ -193,7 +207,7 @@ void calibrateDESensors() {
   }
   /* Modify maximum and minimum capacitance for each finger based on reading */ 
   else{
-    for (int i=0; i<10; i++){   
+    for (int i=0; i<20; i++){   
       if (live_capacitance[i] <= lowest_capacitance[i]){
         lowest_capacitance[i] = live_capacitance[i];
       }
@@ -207,8 +221,9 @@ void calibrateDESensors() {
 // =====================================================
 void writeConfiguration() {
   // 16FGV1.0 requires a configuration package to start streaming data
-  // Set the chip select low to select the device:
-  digitalWrite(chipSelectPin, LOW);
+  // Set the chip select low to select device 1:
+  digitalWrite(chipSelectPin_2, HIGH);
+  digitalWrite(chipSelectPin_1, LOW); 
   SPI.transfer(CONFIG);                 //  Select Config Package
   SPI.transfer(ODR_MODE);               //  Set output data rate
   SPI.transfer(INTERRUPT_MODE);         //  Set interrupt mode
@@ -219,21 +234,46 @@ void writeConfiguration() {
     SPI.transfer(PADDING);              //  Pad out the remaining configuration package
   }
   // take the chip select high to de-select:
-  digitalWrite(chipSelectPin, HIGH);
+  digitalWrite(chipSelectPin_1, HIGH);
+
+  // Set the chip select low to select device 2:
+  digitalWrite(chipSelectPin_2, LOW);
+  SPI.transfer(CONFIG);                 //  Select Config Package
+  SPI.transfer(ODR_MODE);               //  Set output data rate
+  SPI.transfer(INTERRUPT_MODE);         //  Set interrupt mode
+  SPI.transfer(TRIGGER_MODE);           //  Set trigger mode
+  SPI.transfer(FILTER_MODE);            //  Set filter
+  SPI.transfer(RESOLUTION_MODE);        //  Set Resolution
+  for (int i=0;i<16;i++){
+    SPI.transfer(PADDING);              //  Pad out the remaining configuration package
+  }
+  // take the chip select high to de-select:
+  digitalWrite(chipSelectPin_2, HIGH);
 }
 
 // =====================================================
 void readCapacitance(int raw[]) {
   // 16FGV1.0 transmits data in the form of 10, 16bit capacitance values
-  // Set the chip select low to select the device:
-  digitalWrite(chipSelectPin, LOW);
+  // Set the chip select low to select device 1:
+  digitalWrite(chipSelectPin_2, HIGH);
+  digitalWrite(chipSelectPin_1, LOW);
   SPI.transfer(DATA);                   //  Select Data Package
   SPI.transfer(PADDING);                //  Get Sequence Number
   for (int i=0; i<20; i++){
     raw[i] =  SPI.transfer(PADDING);    //  Pad out the remaining configuration package
   }
   // take the chip select high to de-select:
-  digitalWrite(chipSelectPin, HIGH);
+  digitalWrite(chipSelectPin_1, HIGH);
+
+  // Set the chip select low to select device 2:
+  digitalWrite(chipSelectPin_2, LOW);
+  SPI.transfer(DATA);                   //  Select Data Package
+  SPI.transfer(PADDING);                //  Get Sequence Number
+  for (int i=20; i<40; i++){
+    raw[i] =  SPI.transfer(PADDING);    //  Pad out the remaining configuration package
+  }
+  // take the chip select high to de-select:
+  digitalWrite(chipSelectPin_2, HIGH);
 }
 
 // =====================================================
@@ -269,7 +309,7 @@ void StretchSenseLoop () {
   // Read the sensor Data
   readCapacitance(RawData);
   // convert the raw data to capacitance:
-  for (int i=0; i<10; i++){
+  for (int i=0; i<20; i++){
     live_capacitance[i] = (RawData[2*i] << 8) + RawData[2*i + 1];  // Combine two bytes into a single 16-bit value
     live_capacitance[i] /= CapacitanceScalingFactor;
     //capacitance = extractCapacitance(RawData,i);
