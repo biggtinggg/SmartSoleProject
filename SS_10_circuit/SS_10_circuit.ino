@@ -1,3 +1,10 @@
+#include <SPI.h>
+#include <ArduinoBLE.h>
+#include <ArduinoJson.h>
+#include <floatToString.h>
+
+// the StretchSense circuit [16FGV1.0] communicates using SPI
+
 /*
 SPI Connection Tabl
 
@@ -15,25 +22,19 @@ SPI Connection Tabl
 // Module and Variables
 /**************************************************************************/
 
-// the StretchSense circuit [16FGV1.0] communicates using SPI
-#include <SPI.h>
-// #include <SoftwareSerial.h>
-#include <ArduinoBLE.h>
-#include <ArduinoJson.h>
 
 // DE sensors variables
-float live_capacitance[20]    = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-int mapped_capacitance[20]    = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-float highest_capacitance[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-float lowest_capacitance[20]  = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+float live_capacitance[10]    = {0,0,0,0,0,0,0,0,0,0};
+int mapped_capacitance[10]    = {0,0,0,0,0,0,0,0,0,0};
+float highest_capacitance[10] = {0,0,0,0,0,0,0,0,0,0};
+float lowest_capacitance[10]  = {0,0,0,0,0,0,0,0,0,0};
 
 // Flags
 int calibration = false;
 
-// For the Stretsense
-//const int InterruptPin = 6;
-const int chipSelectPin_1 = 9;
-const int chipSelectPin_2 = 10;
+// For the Stretsense boards, these pins serve as the chip select pins
+const int chipSelectPin_1 = 9;    // Disable for board 2
+// const int chipSelectPin_2 = 10;    // Disable for board 1
 
 /**************************************************************************/
 // DEFINITIONS
@@ -88,33 +89,48 @@ int   RESOLUTION_MODE = RESOLUTION_1pF;
 SPISettings SPI_settings(2000000, MSBFIRST, SPI_MODE1); 
 // Default scaling factor
 int CapacitanceScalingFactor = 0; //Default value
-int RawData[40];
+int RawData[20];
 
 // For testing if the board is still on
 unsigned long previousMillis = 0;
 unsigned long interval = 2000;
 
+// For Bluetooth Device Connectivity
+const char* deviceServiceUuid = "19b10000-e8f2-537e-4f6c-d104768a1214";
+const char* deviceServiceCharacteristicUuid = "19b10001-e8f2-537e-4f6c-d104768a1214";
+
+BLEService smartsoleService(deviceServiceUuid); 
+// BLEStringCharacteristic smartsoleCharacteristic(deviceServiceCharacteristicUuid, BLERead | BLENotify, 256);
+BLEStringCharacteristic smartsoleCharacteristic(deviceServiceCharacteristicUuid, BLERead | BLENotify, 1028 );
+// BLECharacteristic smartsoleCharacteristic(deviceServiceCharacteristicUuid, BLERead | BLENotify, 1028 );
+
 // =====================================================
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  while (!Serial);
+  // while (!Serial);
 
   // Enable Bluetooth communication if board is connected over Bluetooth
   if (!BLE.begin()) {
     Serial.println("* Starting Bluetooth® Low Energy module failed!");
     while (1);
   }
-  BLE.setLocalName("Nano 33 BLE (Central)"); 
+  BLE.setDeviceName("Nano 33 BLE (Peripheral Device)"); 
+  BLE.setLocalName("Nano 33 BLE (Peripheral Device)"); 
+  BLE.setAdvertisedService(smartsoleService);
+  smartsoleService.addCharacteristic(smartsoleCharacteristic);
+  // smartsoleCharacteristic.writeValue(0);
+  BLE.addService(smartsoleService);
+  // smartsoleCharacteristic.writeValue(-1);
   BLE.advertise();
-  Serial.println("Arduino Nano 33 BLE (Central Device)");
+  Serial.println("Arduino Nano 33 BLE (Peripheral Device)");
   Serial.println(" ");
 
   //Initialise SPI port
   SPI.begin();
   SPI.beginTransaction(SPI_settings);
   pinMode(chipSelectPin_1, OUTPUT);
-  pinMode(chipSelectPin_2, OUTPUT);
+  // pinMode(chipSelectPin_2, OUTPUT);
 
   //Configure 16FGV1.0:
   writeConfiguration();
@@ -126,8 +142,28 @@ void setup() {
 
 // =====================================================
 void loop() {
+  // Connect to central bluetooth device
+  BLEDevice central = BLE.central();
+  Serial.println("- Discovering central device...");
+  delay(500);
+
+  if (central) {
+    Serial.println("* Connected to central device!");
+    Serial.print("* Device MAC address: ");
+    Serial.println(central.address());
+    Serial.println(" ");
+
+    while (central.connected()) {
+      StretchSenseLoop();
+      sendSerialData();
+      delay(100);
+    }
+    
+    Serial.println("* Disconnected to central device!");
+  }
+
   // Read sensors
-  StretchSenseLoop();
+  // StretchSenseLoop();
   //calibrateDESensors();
   //sendJsonData();
   // live csapacitance
@@ -145,8 +181,8 @@ void loop() {
   // }
 
   // Print to serial
-  sendSerialData();
-  delay(200);
+  // sendSerialData();
+  // delay(200);
 }
 
 // =====================================================
@@ -154,25 +190,39 @@ void sendSerialData() {
   // Serial.print("<");  // Start character
   // Serial.print(millis()); // This will print the timestamp
   // Serial.print(",");
+  String line1 = "";
+  String line2 = "";
   
-  for(int i=0; i<20; i++) {    // i index should be <10 for full serial bus, but since only 8 are used right now it has been changed
-    //Serial.print("ch");
-    //Serial.print(i);
-    //Serial.print(":");
-    //Serial.print (lowest_capacitance[i]);
-    //Serial.print (",");
-    //Serial.print (highest_capacitance[i]);
-    //mapped_capacitance[i] = map(live_capacitance[i], lowest_capacitance[i], highest_capacitance[i], 0, 100);
+  for(int i=0; i<10; i++) {    // i index should be <10 for full serial bus, but since 20 are used right now it has been changed
+
+    // To USB serial output
     Serial.print(calibrationCurve(live_capacitance[i]));
-    if(i < 19) {
+    if(i<9){
       Serial.print(",");
     }
+
+    char S[4];
+    if(i<5){
+      line1 = String(line1 + floatToString(live_capacitance[i], S, sizeof(S), 0));
+      if(i<4){
+        line1 = String(line1 + ",");
+      }
+    }
+    else if(i>=5 && i<10) {
+      line2 = String(line2 + floatToString(live_capacitance[i], S, sizeof(S), 0));
+      if(i<9){
+        line2 = String(line2 + ",");
+      }
+    }
   }
-  // Serial.print(">");
-  // Serial.print(calibrationCurve(live_capacitance[9]));
-  // Serial.print (",");
-  // Serial.print(calibrationCurve(live_capacitance[0]));
+  
+  smartsoleCharacteristic.writeValue(line1);
+  // smartsoleCharacteristic.sleep(1);
+  delay(1);
+  smartsoleCharacteristic.writeValue(line2);
   Serial.println();
+  // Serial.print(line);
+  // Serial.println();
 }
 
 // =====================================================
@@ -188,18 +238,25 @@ void sendJsonData() {
 }
 
 // =====================================================
-float calibrationCurve(float capacitance) {
-    float calibrated = 0;
+// float calibrationCurve(float capacitance) {
+//     float calibrated = 0;
+//     // insert calibration equation here
+//     calibrated = capacitance;
+//     return calibrated;
+// }
+int calibrationCurve(float capacitance) {
+    int calibrated = 0;
     // insert calibration equation here
     calibrated = capacitance;
     return calibrated;
 }
 
+
 // =====================================================
 void calibrateDESensors() {
   /* Initialize maximum and minimum capacitance for each finger */             
   if (calibration == false){
-    for (int i=0; i<20; i++){   
+    for (int i=0; i<10; i++){   
       lowest_capacitance[i] = live_capacitance[i]-1;  
       highest_capacitance[i] = live_capacitance[i]+1; 
       calibration = true;
@@ -207,7 +264,7 @@ void calibrateDESensors() {
   }
   /* Modify maximum and minimum capacitance for each finger based on reading */ 
   else{
-    for (int i=0; i<20; i++){   
+    for (int i=0; i<10; i++){   
       if (live_capacitance[i] <= lowest_capacitance[i]){
         lowest_capacitance[i] = live_capacitance[i];
       }
@@ -222,7 +279,6 @@ void calibrateDESensors() {
 void writeConfiguration() {
   // 16FGV1.0 requires a configuration package to start streaming data
   // Set the chip select low to select device 1:
-  digitalWrite(chipSelectPin_2, HIGH);
   digitalWrite(chipSelectPin_1, LOW); 
   SPI.transfer(CONFIG);                 //  Select Config Package
   SPI.transfer(ODR_MODE);               //  Set output data rate
@@ -235,27 +291,12 @@ void writeConfiguration() {
   }
   // take the chip select high to de-select:
   digitalWrite(chipSelectPin_1, HIGH);
-
-  // Set the chip select low to select device 2:
-  digitalWrite(chipSelectPin_2, LOW);
-  SPI.transfer(CONFIG);                 //  Select Config Package
-  SPI.transfer(ODR_MODE);               //  Set output data rate
-  SPI.transfer(INTERRUPT_MODE);         //  Set interrupt mode
-  SPI.transfer(TRIGGER_MODE);           //  Set trigger mode
-  SPI.transfer(FILTER_MODE);            //  Set filter
-  SPI.transfer(RESOLUTION_MODE);        //  Set Resolution
-  for (int i=0;i<16;i++){
-    SPI.transfer(PADDING);              //  Pad out the remaining configuration package
-  }
-  // take the chip select high to de-select:
-  digitalWrite(chipSelectPin_2, HIGH);
 }
 
 // =====================================================
 void readCapacitance(int raw[]) {
   // 16FGV1.0 transmits data in the form of 10, 16bit capacitance values
   // Set the chip select low to select device 1:
-  digitalWrite(chipSelectPin_2, HIGH);
   digitalWrite(chipSelectPin_1, LOW);
   SPI.transfer(DATA);                   //  Select Data Package
   SPI.transfer(PADDING);                //  Get Sequence Number
@@ -264,16 +305,6 @@ void readCapacitance(int raw[]) {
   }
   // take the chip select high to de-select:
   digitalWrite(chipSelectPin_1, HIGH);
-
-  // Set the chip select low to select device 2:
-  digitalWrite(chipSelectPin_2, LOW);
-  SPI.transfer(DATA);                   //  Select Data Package
-  SPI.transfer(PADDING);                //  Get Sequence Number
-  for (int i=20; i<40; i++){
-    raw[i] =  SPI.transfer(PADDING);    //  Pad out the remaining configuration package
-  }
-  // take the chip select high to de-select:
-  digitalWrite(chipSelectPin_2, HIGH);
 }
 
 // =====================================================
@@ -309,7 +340,7 @@ void StretchSenseLoop () {
   // Read the sensor Data
   readCapacitance(RawData);
   // convert the raw data to capacitance:
-  for (int i=0; i<20; i++){
+  for (int i=0; i<10; i++){
     live_capacitance[i] = (RawData[2*i] << 8) + RawData[2*i + 1];  // Combine two bytes into a single 16-bit value
     live_capacitance[i] /= CapacitanceScalingFactor;
     //capacitance = extractCapacitance(RawData,i);
