@@ -18,9 +18,9 @@ async def notification_handler(sender, data):
     values = data    
     print(values.decode("utf-8"))
 
+address = "D5:B6:C5:1E:71:4B"
   
+# async def main(address):
+#     await read_data(address)
   
-async def main(address):
-    await read_data(address)
-  
-asyncio.run(main("D5:B6:C5:1E:71:4B"))
+# asyncio.run(main("D5:B6:C5:1E:71:4B"))
