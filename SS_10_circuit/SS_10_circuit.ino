@@ -97,12 +97,13 @@ unsigned long interval = 2000;
 
 // For Bluetooth Device Connectivity
 const char* deviceServiceUuid = "19b10000-e8f2-537e-4f6c-d104768a1214";
-const char* deviceServiceCharacteristicUuid = "19b10001-e8f2-537e-4f6c-d104768a1214";
+const char* deviceServiceCharacteristicUuid1 = "19b10001-e8f2-537e-4f6c-d104768a1214";
+const char* deviceServiceCharacteristicUuid2 = "19b10001-e8f2-537e-4f6c-d104768a1215";
 
 BLEService smartsoleService(deviceServiceUuid); 
-// BLEStringCharacteristic smartsoleCharacteristic(deviceServiceCharacteristicUuid, BLERead | BLENotify, 256);
-BLEStringCharacteristic smartsoleCharacteristic(deviceServiceCharacteristicUuid, BLERead | BLENotify, 1028 );
-// BLECharacteristic smartsoleCharacteristic(deviceServiceCharacteristicUuid, BLERead | BLENotify, 1028 );
+BLEStringCharacteristic smartsoleCharacteristic1(deviceServiceCharacteristicUuid1, BLERead | BLENotify, 1028 ); // Carries sensor data from the first 5 sensors (1-5)
+BLEStringCharacteristic smartsoleCharacteristic2(deviceServiceCharacteristicUuid2, BLERead | BLENotify, 1028 ); // Carries sensor data from the latter 5 sensors (6-10)
+
 
 // =====================================================
 void setup() {
@@ -110,7 +111,7 @@ void setup() {
   Serial.begin(115200);
   // while (!Serial);
 
-  // Enable Bluetooth communication if board is connected over Bluetooth
+  // Enable Bluetooth communication when board is connected over Bluetooth
   if (!BLE.begin()) {
     Serial.println("* Starting Bluetooth® Low Energy module failed!");
     while (1);
@@ -118,11 +119,11 @@ void setup() {
   BLE.setDeviceName("Nano 33 BLE (Peripheral Device)"); 
   BLE.setLocalName("Nano 33 BLE (Peripheral Device)"); 
   BLE.setAdvertisedService(smartsoleService);
-  smartsoleService.addCharacteristic(smartsoleCharacteristic);
-  // smartsoleCharacteristic.writeValue(0);
+  smartsoleService.addCharacteristic(smartsoleCharacteristic1);
+  smartsoleService.addCharacteristic(smartsoleCharacteristic2);
   BLE.addService(smartsoleService);
-  // smartsoleCharacteristic.writeValue(-1);
   BLE.advertise();
+
   Serial.println("Arduino Nano 33 BLE (Peripheral Device)");
   Serial.println(" ");
 
@@ -216,26 +217,26 @@ void sendSerialData() {
     }
   }
   
-  smartsoleCharacteristic.writeValue(line1);
+  smartsoleCharacteristic1.writeValue(line1);
   // smartsoleCharacteristic.sleep(1);
   delay(1);
-  smartsoleCharacteristic.writeValue(line2);
+  smartsoleCharacteristic2.writeValue(line2);
   Serial.println();
   // Serial.print(line);
   // Serial.println();
 }
 
 // =====================================================
-void sendJsonData() {
-  StaticJsonDocument<200> doc;  // Static JSON document of 200 bytes
-  doc["ms"] = millis();  // adding the timestamp
-  for (int i = 0; i < 10; i++) {
-    String key = "c" + String(i);
-    doc[key] = calibrationCurve(live_capacitance[i]);
-  }
-  serializeJson(doc, Serial);  // Serialize and send the JSON object to Serial
-  Serial.println();
-}
+//void sendJsonData() {
+//  StaticJsonDocument<200> doc;  // Static JSON document of 200 bytes
+//  doc["ms"] = millis();  // adding the timestamp
+//  for (int i = 0; i < 10; i++) {
+//    String key = "c" + String(i);
+//    doc[key] = calibrationCurve(live_capacitance[i]);
+//  }
+//  serializeJson(doc, Serial);  // Serialize and send the JSON object to Serial
+//  Serial.println();
+//}
 
 // =====================================================
 // float calibrationCurve(float capacitance) {
