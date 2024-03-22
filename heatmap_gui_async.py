@@ -118,27 +118,27 @@ class MyWindow(tk.Tk):
         self.sensor_data_queue = SensorDataQueue()
 
         # Create plot object on GUI
-        fig = Figure()
-        ax = fig.add_subplot(111)
+        self.fig = Figure()
+        self.ax = self.fig.add_subplot(111)
 
-        ax.set_title('Serial Data')
-        ax.set_xlabel('Sample')
-        ax.set_ylabel('Capacitance (pF)')
-        ax.set_xlim(0, 100)
-        ax.set_ylim(0, 900)
+        self.ax.set_title('Serial Data')
+        self.ax.set_xlabel('Sample')
+        self.ax.set_ylabel('Capacitance (pF)')
+        self.ax.set_xlim(0, 100)
+        self.ax.set_ylim(0, 900)
 
-        self.lines1 = ax.plot([],[], color = 'r', label='Sensor 1')[0]
-        self.lines2 = ax.plot([],[], color = 'b', label='Sensor 2')[0]
-        self.lines3 = ax.plot([],[], color = 'g', label='Sensor 3')[0]
-        self.lines4 = ax.plot([],[], color = 'c', label='Sensor 4')[0]
-        self.lines5 = ax.plot([],[], color = 'm', label='Sensor 5')[0]
-        self.lines6 = ax.plot([],[], color = 'y', label='Sensor 6')[0]
-        self.lines7 = ax.plot([],[], color = 'k', label='Sensor 7')[0]
-        self.lines8 = ax.plot([],[], color = 'tab:purple', label='Sensor 8')[0]
-        self.lines9 = ax.plot([],[], color = 'tab:orange', label='Sensor 9')[0]
-        self.lines10 = ax.plot([],[], color = 'tab:brown', label='Sensor 10')[0]
+        self.lines1 = self.ax.plot([],[], color = 'r', label='Sensor 1')[0]
+        self.lines2 = self.ax.plot([],[], color = 'b', label='Sensor 2')[0]
+        self.lines3 = self.ax.plot([],[], color = 'g', label='Sensor 3')[0]
+        self.lines4 = self.ax.plot([],[], color = 'c', label='Sensor 4')[0]
+        self.lines5 = self.ax.plot([],[], color = 'm', label='Sensor 5')[0]
+        self.lines6 = self.ax.plot([],[], color = 'y', label='Sensor 6')[0]
+        self.lines7 = self.ax.plot([],[], color = 'k', label='Sensor 7')[0]
+        self.lines8 = self.ax.plot([],[], color = 'tab:purple', label='Sensor 8')[0]
+        self.lines9 = self.ax.plot([],[], color = 'tab:orange', label='Sensor 9')[0]
+        self.lines10 = self.ax.plot([],[], color = 'tab:brown', label='Sensor 10')[0]
 
-        self.canvas = FigureCanvasTkAgg(fig, master=self.root)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
         self.canvas.get_tk_widget().place(x=500, y=10, width=800, height=800)
         self.canvas.draw()
 
@@ -224,6 +224,8 @@ class MyWindow(tk.Tk):
             await client.start_notify(UID_2, self.notification_handler2)
             while True:
                 self.root.update()
+
+                self.ax.legend()
 
                 self.square_canvas1.configure(background=interpolate_color(self.sensor_data_queue.get_latest_datapoint(0),0))
                 self.square_canvas2.configure(background=interpolate_color(self.sensor_data_queue.get_latest_datapoint(1),1))
