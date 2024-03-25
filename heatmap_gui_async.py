@@ -12,7 +12,7 @@ import tracemalloc
 from collections import deque
 
 # Global parameters
-data = np.array([895, 395, 405, 155, 135, 155, 135, 140, 195, 195])
+data = np.array([415, 395, 180, 275, 190, 440, 480, 220, 230, 180])
 cond = False
 # csv_file_name = " "
 
@@ -23,8 +23,9 @@ UID_2 = "19b10001-e8f2-537e-4f6c-d104768a1215"
 
 # Sensor parameters for each sensor //10 sensors being tested right now
 # Port 1
-nominal_capacitance = [895, 395, 405, 155, 135, 155, 135, 140, 195, 195, 230, 370, 385, 355, 145, 120, 120, 125, 125, 200]
-saturation_capacitance = [155, 95, 95, 60, 60, 60, 65, 65, 70, 70, 70, 80, 90, 90, 50, 50, 50, 50, 50, 50]
+# nominal_capacitance = [895, 395, 405, 155, 135, 155, 135, 140, 195, 195, 230, 370, 385, 355, 145, 120, 120, 125, 125, 200]
+nominal_capacitance = [415, 395, 180, 275, 190, 440, 480, 220, 230, 180]
+saturation_capacitance = [66, 66, 53, 53, 53, 65, 70, 60, 60, 53]
 
 # #----------------------------------------------------------------------------------------------------
 # # Button function definition for starting GUI program
@@ -143,27 +144,27 @@ class MyWindow(tk.Tk):
         self.canvas.draw()
 
         # Create color squares in the canvas
-        self.square_canvas1 = tk.Canvas(self.root, width=250, height=150)
-        self.square_canvas2 = tk.Canvas(self.root, width=120, height=60)
-        self.square_canvas3 = tk.Canvas(self.root, width=120, height=60)
+        self.square_canvas1 = tk.Canvas(self.root, width=80, height=200)
+        self.square_canvas2 = tk.Canvas(self.root, width=80, height=200)
+        self.square_canvas3 = tk.Canvas(self.root, width=40, height=150)
         self.square_canvas4 = tk.Canvas(self.root, width=40, height=150)
         self.square_canvas5 = tk.Canvas(self.root, width=40, height=150)
-        self.square_canvas6 = tk.Canvas(self.root, width=40, height=150)
-        self.square_canvas7 = tk.Canvas(self.root, width=40, height=150)
-        self.square_canvas8 = tk.Canvas(self.root, width=40, height=150)
-        self.square_canvas9 = tk.Canvas(self.root, width=70, height=70)
-        self.square_canvas10 = tk.Canvas(self.root, width=70, height=70)
+        self.square_canvas6 = tk.Canvas(self.root, width=80, height=200)
+        self.square_canvas7 = tk.Canvas(self.root, width=80, height=200)
+        self.square_canvas8 = tk.Canvas(self.root, width=80, height=80)
+        self.square_canvas9 = tk.Canvas(self.root, width=80, height=80)
+        self.square_canvas10 = tk.Canvas(self.root, width=150, height=40)
 
-        self.square_canvas1.place(x=50, y=635)
-        self.square_canvas2.place(x=190, y=560)
-        self.square_canvas3.place(x=50, y=560)
-        self.square_canvas4.place(x=270, y=395)
-        self.square_canvas5.place(x=215, y=395)
-        self.square_canvas6.place(x=160, y=395)
-        self.square_canvas7.place(x=105, y=395)
-        self.square_canvas8.place(x=50, y=395)
-        self.square_canvas9.place(x=240, y=310)
-        self.square_canvas10.place(x=145, y=310)
+        self.square_canvas1.place(x=215, y=600)
+        self.square_canvas2.place(x=120, y=580)
+        self.square_canvas3.place(x=235, y=415)
+        self.square_canvas4.place(x=180, y=415)
+        self.square_canvas5.place(x=125, y=415)
+        self.square_canvas6.place(x=200, y=200)
+        self.square_canvas7.place(x=105, y=200)
+        self.square_canvas8.place(x=225, y=105)
+        self.square_canvas9.place(x=120, y=105)
+        self.square_canvas10.place(x=150, y=50)
 
         self.square_canvas1.configure(background=interpolate_color(nominal_capacitance[0], 0))
         self.square_canvas2.configure(background=interpolate_color(nominal_capacitance[1], 1))
@@ -176,16 +177,16 @@ class MyWindow(tk.Tk):
         self.square_canvas9.configure(background=interpolate_color(nominal_capacitance[8], 8))
         self.square_canvas10.configure(background=interpolate_color(nominal_capacitance[9], 9))
 
-        self.square_tag1 = self.square_canvas1.create_text(125, 75, text=str(data[0]))
-        self.square_tag2 = self.square_canvas2.create_text(60, 30, text=str(data[1]))
-        self.square_tag3 = self.square_canvas3.create_text(60, 30, text=str(data[2]))
+        self.square_tag1 = self.square_canvas1.create_text(40, 100, text=str(data[0]))
+        self.square_tag2 = self.square_canvas2.create_text(40, 100, text=str(data[1]))
+        self.square_tag3 = self.square_canvas3.create_text(20, 75, text=str(data[2]))
         self.square_tag4 = self.square_canvas4.create_text(20, 75, text=str(data[3]))
         self.square_tag5 = self.square_canvas5.create_text(20, 75, text=str(data[4]))
-        self.square_tag6 = self.square_canvas6.create_text(20, 75, text=str(data[5]))
-        self.square_tag7 = self.square_canvas7.create_text(20, 75, text=str(data[6]))
-        self.square_tag8 = self.square_canvas8.create_text(20, 75, text=str(data[7]))
-        self.square_tag9 = self.square_canvas9.create_text(35, 35, text=str(data[8]))
-        self.square_tag10 = self.square_canvas10.create_text(35, 35, text=str(data[9]))
+        self.square_tag6 = self.square_canvas6.create_text(40, 100, text=str(data[5]))
+        self.square_tag7 = self.square_canvas7.create_text(40, 100, text=str(data[6]))
+        self.square_tag8 = self.square_canvas8.create_text(40, 40, text=str(data[7]))
+        self.square_tag9 = self.square_canvas9.create_text(40, 40, text=str(data[8]))
+        self.square_tag10 = self.square_canvas10.create_text(75, 20, text=str(data[9]))
 
         
         # Create buttons
