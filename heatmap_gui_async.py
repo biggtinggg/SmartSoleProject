@@ -7,12 +7,15 @@ from generativepy.color import Color
 import csv
 import asyncio
 from bleak import BleakClient
-import threading
-import tracemalloc
 from collections import deque
+from PIL import ImageTk, Image
 
 # Global parameters
-data = np.array([415, 395, 180, 275, 190, 440, 480, 220, 230, 180])
+# # Sole prototype
+# data = np.array([415, 395, 180, 180, 190, 440, 480, 220, 230, 180])
+# Sock prototype
+data = np.array([337,238,269,192,150,352,278,172,172,107])
+
 cond = False
 # csv_file_name = " "
 
@@ -22,10 +25,16 @@ UID_1 = "19b10001-e8f2-537e-4f6c-d104768a1214"
 UID_2 = "19b10001-e8f2-537e-4f6c-d104768a1215"
 
 # Sensor parameters for each sensor //10 sensors being tested right now
-# Port 1
+# Board Prototype
 # nominal_capacitance = [895, 395, 405, 155, 135, 155, 135, 140, 195, 195, 230, 370, 385, 355, 145, 120, 120, 125, 125, 200]
-nominal_capacitance = [415, 395, 180, 275, 190, 440, 480, 220, 230, 180]
-saturation_capacitance = [66, 66, 53, 53, 53, 65, 70, 60, 60, 53]
+
+## Sole Prototype:
+# nominal_capacitance = [415, 395, 180, 180, 190, 440, 480, 220, 230, 180]
+# saturation_capacitance = [66, 66, 53, 53, 53, 65, 70, 60, 60, 53]
+
+## Sock Prototype:
+nominal_capacitance = [337,238,269,192,150,352,278,172,172,107]
+saturation_capacitance = [37, 37, 26, 26, 26, 37, 37, 34, 34, 26]
 
 # #----------------------------------------------------------------------------------------------------
 # # Button function definition for starting GUI program
@@ -42,7 +51,7 @@ saturation_capacitance = [66, 66, 53, 53, 53, 65, 70, 60, 60, 53]
 # Interpolation of color from capacitance value
 def interpolate_color(current_capacitance, sensor_no):
     color1 = Color('red')
-    color2 = Color('green')
+    color2 = Color('black')
     
     # Calculate the mix ratio, which is indicative of how much the sensor has been pressed
     try:
@@ -55,8 +64,10 @@ def interpolate_color(current_capacitance, sensor_no):
     r_int = int(r * 255)
     g_int = int(g * 255)
     b_int = int(b * 255)
+    # a_int = int((1-mix_ratio) * 255)
 
     # Converting the RGB intensities into colour hex codes without transparency
+    # color_string = f"#{a_int:02x}{r_int:02x}{g_int:02x}{b_int:02x}"
     color_string = f"#{r_int:02x}{g_int:02x}{b_int:02x}"
 
     return color_string
@@ -112,8 +123,18 @@ class MyWindow(tk.Tk):
         self.root = tk.Tk()
 
         self.root.title('Smart Sole GUI')
-        self.root.configure(background = 'light blue')
-        self.root.geometry("1600x1000")    # Set the window size
+        self.root.configure(background = 'white')
+        self.root.geometry("1920x1080")    # Set the window size
+        self.foreground = tk.Canvas(bg='white', width = 431, height = 846)
+
+        # Add in sole template
+        # self.img = ImageTk.PhotoImage(Image.open("Sole Mask.png"))
+        # self.label1 = tk.Label(image=self.img)
+        # self.label1.place(x=10, y=10)
+        
+
+
+        self.foreground.place(x=0, y=0)
 
         # Instantiate data queue object
         self.sensor_data_queue = SensorDataQueue()
@@ -143,28 +164,29 @@ class MyWindow(tk.Tk):
         self.canvas.get_tk_widget().place(x=500, y=10, width=800, height=800)
         self.canvas.draw()
 
+
         # Create color squares in the canvas
-        self.square_canvas1 = tk.Canvas(self.root, width=80, height=200)
-        self.square_canvas2 = tk.Canvas(self.root, width=80, height=200)
-        self.square_canvas3 = tk.Canvas(self.root, width=40, height=150)
-        self.square_canvas4 = tk.Canvas(self.root, width=40, height=150)
-        self.square_canvas5 = tk.Canvas(self.root, width=40, height=150)
-        self.square_canvas6 = tk.Canvas(self.root, width=80, height=200)
-        self.square_canvas7 = tk.Canvas(self.root, width=80, height=200)
-        self.square_canvas8 = tk.Canvas(self.root, width=80, height=80)
-        self.square_canvas9 = tk.Canvas(self.root, width=80, height=80)
-        self.square_canvas10 = tk.Canvas(self.root, width=150, height=40)
+        self.square_canvas1 = tk.Canvas(self.foreground, width=80, height=200, bd=0, highlightthickness=0, relief='ridge')
+        self.square_canvas2 = tk.Canvas(self.foreground, width=80, height=200, bd=0, highlightthickness=0, relief='ridge')
+        self.square_canvas3 = tk.Canvas(self.foreground, width=40, height=150, bd=0, highlightthickness=0, relief='ridge')
+        self.square_canvas4 = tk.Canvas(self.foreground, width=40, height=150, bd=0, highlightthickness=0, relief='ridge')
+        self.square_canvas5 = tk.Canvas(self.foreground, width=40, height=150, bd=0, highlightthickness=0, relief='ridge')
+        self.square_canvas6 = tk.Canvas(self.foreground, width=100, height=200, bd=0, highlightthickness=0, relief='ridge')
+        self.square_canvas7 = tk.Canvas(self.foreground, width=100, height=200, bd=0, highlightthickness=0, relief='ridge')
+        self.square_canvas8 = tk.Canvas(self.foreground, width=80, height=80, bd=0, highlightthickness=0, relief='ridge')
+        self.square_canvas9 = tk.Canvas(self.foreground, width=80, height=80, bd=0, highlightthickness=0, relief='ridge')
+        self.square_canvas10 = tk.Canvas(self.foreground, width=135, height=40, bd=0, highlightthickness=0, relief='ridge')
 
         self.square_canvas1.place(x=215, y=600)
         self.square_canvas2.place(x=120, y=580)
-        self.square_canvas3.place(x=235, y=415)
-        self.square_canvas4.place(x=180, y=415)
-        self.square_canvas5.place(x=125, y=415)
-        self.square_canvas6.place(x=200, y=200)
-        self.square_canvas7.place(x=105, y=200)
-        self.square_canvas8.place(x=225, y=105)
-        self.square_canvas9.place(x=120, y=105)
-        self.square_canvas10.place(x=150, y=50)
+        self.square_canvas3.place(x=205, y=415)
+        self.square_canvas4.place(x=150, y=415)
+        self.square_canvas5.place(x=95, y=415)
+        self.square_canvas6.place(x=185, y=200)
+        self.square_canvas7.place(x=70, y=200)
+        self.square_canvas8.place(x=215, y=105)
+        self.square_canvas9.place(x=110, y=105)
+        self.square_canvas10.place(x=145, y=50)
 
         self.square_canvas1.configure(background=interpolate_color(nominal_capacitance[0], 0))
         self.square_canvas2.configure(background=interpolate_color(nominal_capacitance[1], 1))
@@ -177,29 +199,32 @@ class MyWindow(tk.Tk):
         self.square_canvas9.configure(background=interpolate_color(nominal_capacitance[8], 8))
         self.square_canvas10.configure(background=interpolate_color(nominal_capacitance[9], 9))
 
-        self.square_tag1 = self.square_canvas1.create_text(40, 100, text=str(data[0]))
-        self.square_tag2 = self.square_canvas2.create_text(40, 100, text=str(data[1]))
-        self.square_tag3 = self.square_canvas3.create_text(20, 75, text=str(data[2]))
-        self.square_tag4 = self.square_canvas4.create_text(20, 75, text=str(data[3]))
-        self.square_tag5 = self.square_canvas5.create_text(20, 75, text=str(data[4]))
-        self.square_tag6 = self.square_canvas6.create_text(40, 100, text=str(data[5]))
-        self.square_tag7 = self.square_canvas7.create_text(40, 100, text=str(data[6]))
-        self.square_tag8 = self.square_canvas8.create_text(40, 40, text=str(data[7]))
-        self.square_tag9 = self.square_canvas9.create_text(40, 40, text=str(data[8]))
-        self.square_tag10 = self.square_canvas10.create_text(75, 20, text=str(data[9]))
+        self.square_tag1 = self.square_canvas1.create_text(40, 100, text=str(data[0]), fill = 'white')
+        self.square_tag2 = self.square_canvas2.create_text(40, 100, text=str(data[1]), fill = 'white')
+        self.square_tag3 = self.square_canvas3.create_text(20, 75, text=str(data[2]), fill = 'white')
+        self.square_tag4 = self.square_canvas4.create_text(20, 75, text=str(data[3]), fill = 'white')
+        self.square_tag5 = self.square_canvas5.create_text(20, 75, text=str(data[4]), fill = 'white')
+        self.square_tag6 = self.square_canvas6.create_text(50, 100, text=str(data[5]), fill = 'white')
+        self.square_tag7 = self.square_canvas7.create_text(50, 100, text=str(data[6]), fill = 'white')
+        self.square_tag8 = self.square_canvas8.create_text(40, 40, text=str(data[7]), fill = 'white')
+        self.square_tag9 = self.square_canvas9.create_text(40, 40, text=str(data[8]), fill = 'white')
+        self.square_tag10 = self.square_canvas10.create_text(67.5, 20, text=str(data[9]), fill = 'white')
 
+        self.photoimage = ImageTk.PhotoImage(file="Sole Mask.png")
+        self.mask = tk.Label(self.foreground, image=self.photoimage)
+        self.mask.place(x=0,y=0)
         
         # Create buttons
         self.root.update()
         start=tk.Button(self.root, text = "Start", command=lambda: self.plot_start())
         # start=tk.Button(self.root, text = "Start")
 
-        start.place(x=50, y=850)
+        start.place(x=50, y=900)
 
         self.root.update()
         stop=tk.Button(self.root, text="Stop", command=lambda: self.plot_stop())
         # stop=tk.Button(self.root, text="Stop")
-        stop.place(x=start.winfo_x() + start.winfo_reqwidth() + 20, y=850)
+        stop.place(x=start.winfo_x() + start.winfo_reqwidth() + 20, y=900)
 
         self.root.update()
         # save_button = tk.Button(self.root, text= "Save .csv file", padx = 40.0, pady = 50.0, command=lambda: save_csv())
@@ -207,7 +232,7 @@ class MyWindow(tk.Tk):
 
         # Create entry widget
         e = tk.Entry(self.root)
-        e.place(x=start.winfo_x(), y=start.winfo_y() - 50)
+        e.place(x=start.winfo_x(), y=start.winfo_y() + 50)
         e.insert(0, "Enter csv file name for saving (___.csv)")
         e.get()
 
@@ -231,22 +256,22 @@ class MyWindow(tk.Tk):
                 self.square_canvas1.configure(background=interpolate_color(self.sensor_data_queue.get_latest_datapoint(0),0))
                 self.square_canvas2.configure(background=interpolate_color(self.sensor_data_queue.get_latest_datapoint(1),1))
                 self.square_canvas3.configure(background=interpolate_color(self.sensor_data_queue.get_latest_datapoint(2),2))
-                self.square_canvas8.configure(background=interpolate_color(self.sensor_data_queue.get_latest_datapoint(3),3))
-                self.square_canvas7.configure(background=interpolate_color(self.sensor_data_queue.get_latest_datapoint(4),4))
+                self.square_canvas4.configure(background=interpolate_color(self.sensor_data_queue.get_latest_datapoint(3),3))
+                self.square_canvas5.configure(background=interpolate_color(self.sensor_data_queue.get_latest_datapoint(4),4))
                 self.square_canvas6.configure(background=interpolate_color(self.sensor_data_queue.get_latest_datapoint(5),5))
-                self.square_canvas5.configure(background=interpolate_color(self.sensor_data_queue.get_latest_datapoint(6),6))
-                self.square_canvas4.configure(background=interpolate_color(self.sensor_data_queue.get_latest_datapoint(7),7))
+                self.square_canvas7.configure(background=interpolate_color(self.sensor_data_queue.get_latest_datapoint(6),6))
+                self.square_canvas8.configure(background=interpolate_color(self.sensor_data_queue.get_latest_datapoint(7),7))
                 self.square_canvas9.configure(background=interpolate_color(self.sensor_data_queue.get_latest_datapoint(8),8))
                 self.square_canvas10.configure(background=interpolate_color(self.sensor_data_queue.get_latest_datapoint(9),9))
 
                 self.square_canvas1.itemconfig(self.square_tag1, text=str(self.sensor_data_queue.get_latest_datapoint(0)))
                 self.square_canvas2.itemconfig(self.square_tag2, text=str(self.sensor_data_queue.get_latest_datapoint(1)))
                 self.square_canvas3.itemconfig(self.square_tag3, text=str(self.sensor_data_queue.get_latest_datapoint(2)))
-                self.square_canvas8.itemconfig(self.square_tag4, text=str(self.sensor_data_queue.get_latest_datapoint(3)))
-                self.square_canvas7.itemconfig(self.square_tag5, text=str(self.sensor_data_queue.get_latest_datapoint(4)))
+                self.square_canvas4.itemconfig(self.square_tag4, text=str(self.sensor_data_queue.get_latest_datapoint(3)))
+                self.square_canvas5.itemconfig(self.square_tag5, text=str(self.sensor_data_queue.get_latest_datapoint(4)))
                 self.square_canvas6.itemconfig(self.square_tag6, text=str(self.sensor_data_queue.get_latest_datapoint(5)))
-                self.square_canvas5.itemconfig(self.square_tag7, text=str(self.sensor_data_queue.get_latest_datapoint(6)))
-                self.square_canvas4.itemconfig(self.square_tag8, text=str(self.sensor_data_queue.get_latest_datapoint(7)))
+                self.square_canvas7.itemconfig(self.square_tag7, text=str(self.sensor_data_queue.get_latest_datapoint(6)))
+                self.square_canvas8.itemconfig(self.square_tag8, text=str(self.sensor_data_queue.get_latest_datapoint(7)))
                 self.square_canvas9.itemconfig(self.square_tag9, text=str(self.sensor_data_queue.get_latest_datapoint(8)))
                 self.square_canvas10.itemconfig(self.square_tag10, text=str(self.sensor_data_queue.get_latest_datapoint(9)))
 
@@ -256,16 +281,16 @@ class MyWindow(tk.Tk):
                 self.lines2.set_ydata(self.sensor_data_queue.get_latest_data(1))
                 self.lines3.set_xdata(np.arange(0,len(self.sensor_data_queue.get_latest_data(2))))
                 self.lines3.set_ydata(self.sensor_data_queue.get_latest_data(2))
-                self.lines8.set_xdata(np.arange(0,len(self.sensor_data_queue.get_latest_data(3))))
-                self.lines8.set_ydata(self.sensor_data_queue.get_latest_data(3))
-                self.lines7.set_xdata(np.arange(0,len(self.sensor_data_queue.get_latest_data(4))))
-                self.lines7.set_ydata(self.sensor_data_queue.get_latest_data(4))
+                self.lines4.set_xdata(np.arange(0,len(self.sensor_data_queue.get_latest_data(3))))
+                self.lines4.set_ydata(self.sensor_data_queue.get_latest_data(3))
+                self.lines5.set_xdata(np.arange(0,len(self.sensor_data_queue.get_latest_data(4))))
+                self.lines5.set_ydata(self.sensor_data_queue.get_latest_data(4))
                 self.lines6.set_xdata(np.arange(0,len(self.sensor_data_queue.get_latest_data(5))))
                 self.lines6.set_ydata(self.sensor_data_queue.get_latest_data(5))
-                self.lines5.set_xdata(np.arange(0,len(self.sensor_data_queue.get_latest_data(6))))
-                self.lines5.set_ydata(self.sensor_data_queue.get_latest_data(6))
-                self.lines4.set_xdata(np.arange(0,len(self.sensor_data_queue.get_latest_data(7))))
-                self.lines4.set_ydata(self.sensor_data_queue.get_latest_data(7))
+                self.lines7.set_xdata(np.arange(0,len(self.sensor_data_queue.get_latest_data(6))))
+                self.lines7.set_ydata(self.sensor_data_queue.get_latest_data(6))
+                self.lines8.set_xdata(np.arange(0,len(self.sensor_data_queue.get_latest_data(7))))
+                self.lines8.set_ydata(self.sensor_data_queue.get_latest_data(7))
                 self.lines9.set_xdata(np.arange(0,len(self.sensor_data_queue.get_latest_data(8))))
                 self.lines9.set_ydata(self.sensor_data_queue.get_latest_data(8))
                 self.lines10.set_xdata(np.arange(0,len(self.sensor_data_queue.get_latest_data(9))))
