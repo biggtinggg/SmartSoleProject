@@ -10,11 +10,11 @@ from bleak import BleakClient
 from collections import deque
 from PIL import ImageTk, Image
 
-# Global parameters
+# Global parameters0
 # # Sole prototype
 # data = np.array([415, 395, 180, 180, 190, 440, 480, 220, 230, 180])
 # Sock prototype
-data = np.array([337,238,269,192,150,352,278,172,172,107])
+data = np.array([108,150,150,270,270,150,150,150,260,260])
 
 cond = False
 # csv_file_name = " "
@@ -33,8 +33,8 @@ UID_2 = "19b10001-e8f2-537e-4f6c-d104768a1215"
 # saturation_capacitance = [66, 66, 53, 53, 53, 65, 70, 60, 60, 53]
 
 ## Sock Prototype:
-nominal_capacitance = [337,238,269,192,150,352,278,172,172,107]
-saturation_capacitance = [37, 37, 26, 26, 26, 37, 37, 34, 34, 26]
+nominal_capacitance = [108,150,150,270,270,150,150,150,260,260]
+saturation_capacitance = [15, 26, 26, 37, 37, 26, 26, 26, 37, 37]
 
 # #----------------------------------------------------------------------------------------------------
 # # Button function definition for starting GUI program
@@ -181,45 +181,31 @@ class MyWindow(tk.Tk):
         self.foreground.itemconfig(self.square_canvas1, fill=interpolate_color(nominal_capacitance[8], 8))
         self.foreground.itemconfig(self.square_canvas2, fill=interpolate_color(nominal_capacitance[9], 9))
 
-        # self.square_tag1 = self.foreground.create_text(40, 100, text=str(data[0]), fill = 'red')
-        # self.square_tag2 = self.foreground.create_text(40, 100, text=str(data[1]), fill = 'white')
-        # self.square_tag3 = self.foreground.create_text(20, 75, text=str(data[2]), fill = 'white')
-        # self.square_tag4 = self.foreground.create_text(20, 75, text=str(data[3]), fill = 'white')
-        # self.square_tag5 = self.foreground.create_text(20, 75, text=str(data[4]), fill = 'white')
-        # self.square_tag6 = self.foreground.create_text(50, 100, text=str(data[5]), fill = 'white')
-        # self.square_tag7 = self.foreground.create_text(50, 100, text=str(data[6]), fill = 'white')
-        # self.square_tag8 = self.foreground.create_text(40, 40, text=str(data[7]), fill = 'white')
-        # self.square_tag9 = self.foreground.create_text(40, 40, text=str(data[8]), fill = 'white')
-        # self.square_tag10 = self.foreground.create_text(67.5, 20, text=str(data[9]), fill = 'white')
-
         # Apply masking
         self.photoimage1 = ImageTk.PhotoImage(file="Sole Mask.png")
-        self.mask = self.foreground.create_image(431/2, 846/2, image=self.photoimage1)
-        # self.label = tk.Label(self.foreground, image=self.photoimage1)
-        
+        self.mask = self.foreground.create_image(431/2, 846/2, image=self.photoimage1)    
     
+        # # Create buttons
+        # self.root.update()
+        # start=tk.Button(self.root, text = "Start", command=lambda: self.plot_start())
+        # # start=tk.Button(self.root, text = "Start")
 
-        # Create buttons
-        self.root.update()
-        start=tk.Button(self.root, text = "Start", command=lambda: self.plot_start())
-        # start=tk.Button(self.root, text = "Start")
+        # start.place(x=50, y=900)
 
-        start.place(x=50, y=900)
-
-        self.root.update()
-        stop=tk.Button(self.root, text="Stop", command=lambda: self.plot_stop())
-        # stop=tk.Button(self.root, text="Stop")
-        stop.place(x=start.winfo_x() + start.winfo_reqwidth() + 20, y=900)
+        # self.root.update()
+        # stop=tk.Button(self.root, text="Stop", command=lambda: self.plot_stop())
+        # # stop=tk.Button(self.root, text="Stop")
+        # stop.place(x=start.winfo_x() + start.winfo_reqwidth() + 20, y=900)
 
         self.root.update()
         # save_button = tk.Button(self.root, text= "Save .csv file", padx = 40.0, pady = 50.0, command=lambda: save_csv())
         # save_button.place(x=stop.winfo_x() + stop.winfo_reqwidth() + 20, y=850)
 
-        # Create entry widget
-        e = tk.Entry(self.root)
-        e.place(x=start.winfo_x(), y=start.winfo_y() + 50)
-        e.insert(0, "Enter csv file name for saving (___.csv)")
-        e.get()
+        # # Create entry widget
+        # e = tk.Entry(self.root)
+        # e.place(x=start.winfo_x(), y=start.winfo_y() + 50)
+        # e.insert(0, "Enter csv file name for saving (___.csv)")
+        # e.get()
 
     def plot_start(self):
         global cond 
@@ -248,17 +234,6 @@ class MyWindow(tk.Tk):
                 self.foreground.itemconfig(self.square_canvas5, fill=interpolate_color(self.sensor_data_queue.get_latest_datapoint(7),7))
                 self.foreground.itemconfig(self.square_canvas1, fill=interpolate_color(self.sensor_data_queue.get_latest_datapoint(8),8))
                 self.foreground.itemconfig(self.square_canvas2, fill=interpolate_color(self.sensor_data_queue.get_latest_datapoint(9),9))
-
-                # self.square_canvas1.itemconfig(self.square_tag1, text=str(self.sensor_data_queue.get_latest_datapoint(0)))
-                # self.square_canvas2.itemconfig(self.square_tag2, text=str(self.sensor_data_queue.get_latest_datapoint(1)))
-                # self.square_canvas3.itemconfig(self.square_tag3, text=str(self.sensor_data_queue.get_latest_datapoint(2)))
-                # self.square_canvas4.itemconfig(self.square_tag4, text=str(self.sensor_data_queue.get_latest_datapoint(3)))
-                # self.square_canvas5.itemconfig(self.square_tag5, text=str(self.sensor_data_queue.get_latest_datapoint(4)))
-                # self.square_canvas6.itemconfig(self.square_tag6, text=str(self.sensor_data_queue.get_latest_datapoint(5)))
-                # self.square_canvas7.itemconfig(self.square_tag7, text=str(self.sensor_data_queue.get_latest_datapoint(6)))
-                # self.square_canvas8.itemconfig(self.square_tag8, text=str(self.sensor_data_queue.get_latest_datapoint(7)))
-                # self.square_canvas9.itemconfig(self.square_tag9, text=str(self.sensor_data_queue.get_latest_datapoint(8)))
-                # self.square_canvas10.itemconfig(self.square_tag10, text=str(self.sensor_data_queue.get_latest_datapoint(9)))
 
                 self.lines1.set_xdata(np.arange(0,len(self.sensor_data_queue.get_latest_data(0))))
                 self.lines1.set_ydata(self.sensor_data_queue.get_latest_data(0))
@@ -308,9 +283,8 @@ class MyWindow(tk.Tk):
                 index += 1
             except ValueError or int(element)==0:
                 pass
-        # print(type(self.sensor_data_queue.get_latest_datapoint(9)))
             
        
 #----------------------------------------------------------------------------------------------------
-# Main instatiation call
+# Main call
 asyncio.run(start_window())
